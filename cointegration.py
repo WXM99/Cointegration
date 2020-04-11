@@ -6,52 +6,41 @@ from pandas import *
 
 class Cointegration:
     "the class encapsulating cointegration opes on two stocks."
-    __chn_stock
-    chn_stock_name
-    chn_stock_code
-    __usa_stock
-    usa_stock_name 
-    usa_stock_code
+    chn_stock_dict = {}
+    chn_stock_name = ""
+    chn_stock_code = ""
+    usa_stock_dict = {}
+    usa_stock_name = ""
+    usa_stock_code = ""
 
-    __usa_value
-    __chn_value
+    usa_stock_value = []
+    chn_stock_value = []
     
     def __init__(self, stock_chn, stock_usa):
-        self.__chn_stock = stock_chn
-        self.__usa_stock = stock_chn
+        self.chn_stock_dict = stock_chn
+        self.usa_stock_dict = stock_usa
         chn_val = list()
         usa_val = list()
-        for (date, value) in __chn_stock.items():
+        for (date, value) in self.chn_stock_dict.items():
             chn_val.append(value)
-        self.__chn_value = chn_val
-        for (date, value) in __usa_stock.items():
+        self.chn_stock_value = chn_val
+        for (date, value) in self.usa_stock_dict.items():
             usa_val.append(value)
-        self.__usa_value = usa_val
+        self.usa_stock_value = usa_val
     
-    def setChn(self, stock_chn):
-        self.__chn_stock = stock_chn
-
-    def setUsa(self, stock_usa):
-        self.__usa_stock = stock_usa
-    
-    def getChn(self):
-        return self.__chn_stock
-    def getUsa(self):
-        return self.__usa_stock
-    
-    def __testSingleStationarity(data):
+    def __testSingleStationarity(self, data):
         adftest = adfuller(data)
         result = pd.Series(adftest[0:4], index=['Test Statistic','p-value','Lags Used','Number of Observations Used'])
         for key,value in adftest[4].items():
             result['Critical Value (%s)'%key] = value
         return result
 
-    def testsSationarity(): 
-        chn_val = self.__chn_value
-        usa_val = self.__usa_value
+    def testSationarity(self): 
+        chn_val = self.chn_stock_value
+        usa_val = self.usa_stock_value
         chn_val=np.array(chn_val).T[0]
         usa_val=np.array(usa_val).T[0]
-        res=pd.concat([testStationarity(chn_val),testStationarity(usa_val)],axis=1)
+        res=pd.concat([self.__testSingleStationarity(chn_val),self.__testSingleStationarity(usa_val)],axis=1)
         res.columns=[self.chn_stock_name,self.chn_stock_name]
         return res
     '''
@@ -65,55 +54,38 @@ class Cointegration:
     Critical Value (10%)    	-2.573339e+00	-2.573512
     '''
 
-    def diffVals(n):
-        chn_val = self.__chn_value
+    def diffVals(self, n):
+        chn_val = self.chn_stock_value
         diff_chn=chn_val.diff(n).dropna(inplace=True)
         diff_chn=np.array(diff_chn).T[0]
-        usa_val = self.__usa_value
+        usa_val = self.usa_stock_value
         diff_usa=usa_val.diff(n).dropna(inplace=True)
         diff_usa=np.array(diff_usa).T[0]
-        res=pd.concat([testStationarity(diff_chn),testStationarity(diff_usa)],axis=1)
+        res=pd.concat([self.__testSingleStationarity(diff_chn),self.__testSingleStationarity(diff_usa)],axis=1)
         res.columns=[self.chn_stock_name,self.chn_stock_name]
         return res
 
-    def coint():
-        chn_val = self.__chn_value
-        usa_val = self.__usa_value
+    def coint(self):
+        chn_val = self.chn_stock_value
+        usa_val = self.usa_stock_value
         chn_val=np.array(chn_val)
         usa_val=np.array(usa_val)
         a,pvalue,b = coint(chn_val,usa_val)
         return pvalue
 
-    def getSpreadPrice():
-        chn_val = self.__chn_value
-        usa_val = self.__usa_value
-        mean=(chn_val-usa_val).mean()
-        std=(chn_val-usa_val).std()
-        s1=pd.Series(mean[0],index=range(len(chn_val)))
-        s2=pd.Series(mean[0]+std[0],index=range(len(chn_val)))
-        s3=pd.Series(mean[0]-std[0],index=range(len(chn_val)))
-        res=pd.concat([chn_val-usa_val,s1,s2,s3],axis=1)
-        res.columns=['spread_price','mean','upper','lower']
-        return res
+    def getSpreadPrice(self):
+        chn_val = np.array(self.chn_stock_value)
+        usa_val = np.array(self.usa_stock_value)
+        return chn_val-usa_val
+
+    def getParas(self):
+        spread = self.getSpreadPrice()
+        mean = spread.mean()
+        std = spread.std()
+        return {"mean": mean, "upper": mean + std, "lower": mean-std}
+
     '''
     1.spread_price is greater than upper: short position
-
     2.spread_price is lower than lower: open position
-
     3.spread_price is closer to zero: close position
     '''
-
-
-
-
-
-    
-
-    
-
-        
-        
-            
-            
-    
-
